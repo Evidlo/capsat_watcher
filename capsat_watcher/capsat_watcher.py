@@ -16,7 +16,7 @@ log = logging.getLogger('capsat_watcher')
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 # we check that these RecordSources exist in django before uploading
-# (record source name, data type, data size)
+# (RecordSource name, data type, data size)
 BEACON_FORMAT = {
     ('sync', '<H', 2),
     ('host_id', '<B', 1),
@@ -77,18 +77,11 @@ def upload_beacon(*, target, token, beacon_path):
     """
     beacon_path = Path(beacon_path)
 
-    # skip already-processed beacons
-    parsed_file = beacon_path.parent.joinpath('.processed_beacons')
-    if parsed_file.exists():
-        parsed_beacons = open(parsed_file, 'r').read().splitlines()
-        if beacon_path.name in parsed_beacons:
-            log.debug("Skipping already-processed beacon")
-            return
-
     date, data = parse_beacon(beacon_path)
 
     log.info("Uploading beacon data to MOC")
 
+    # loop through beacon data and upload each as a Record
     for rs, value in data.items():
         r = requests.post(
             target + '/api/objects/records/',
@@ -104,8 +97,8 @@ def upload_beacon(*, target, token, beacon_path):
             log.error("Got an error from MOC. Saving to error.html")
             return
 
-    open(parsed_file, 'a').write(beacon_path.name + '\n')
     log.info(f"Processed {beacon_path.name}")
+    beacon_path.rename(beacon_path.parent.joinpath('processed_' + beacon_path.name))
 
 def parse_beacon(filename):
     """
@@ -120,11 +113,13 @@ def parse_beacon(filename):
     date = datetime.datetime.strptime(filename.name, "beacon_%Y-%m-%d_%H:%M:%S")
     date = date.replace(tzinfo=datetime.timezone.utc)
 
+    # check beacon buffer size before unpacking
     f = open(filename, 'rb')
     num_bytes = len(f.peek())
     if num_bytes != 74:
         log.error(f"Incorrect beacon size.  Got {num_bytes} bytes")
 
+    # unpack beacon data into dict
     data = {}
     for rs, t, s in BEACON_FORMAT:
         data[rs] = unpack(t, f.read(s))
@@ -132,7 +127,7 @@ def parse_beacon(filename):
     return date, data
 
 def check_database(*, target, token):
-    """Verify that database has the record sources we need
+    """Verify that database has the RecordSources we need
 
     Arguments:
         target (str): host + port of target django server
@@ -141,6 +136,7 @@ def check_database(*, target, token):
 
     log.info("Checking Django has the RecordSources we need")
 
+    # get list of existing RecordSources
     url = target + '/api/objects/record_sources/'
     record_sources = requests.get(
         url,
@@ -151,6 +147,7 @@ def check_database(*, target, token):
     django_record_sources = [rs['suffix'] for rs in j['results']]
     expected_record_sources = [rs[0] for rs in BEACON_FORMAT]
 
+    # compare existing vs expected RecordSources
     if set(django_record_sources) != set(expected_record_sources):
         log.error("Django database is missing expected RecordSources")
         log.error(f"Expected: {expected_record_sources}")
