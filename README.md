@@ -8,6 +8,8 @@ Once beacons are processed, their filename will be added to a `.processed_beacon
 
     $ pip install .
     $ capsat_watcher --target http://localhost:8000 --token XXXXXXXX --path path/to/beacons/
+    Checking Django has the RecordSources we need
+    Watching directory path/to/beacons/
     
 Obtain a token from Django like so:
 
@@ -22,6 +24,7 @@ Or when using development server:
 
 ## Usage
 
+```
 usage: Beacon watcher [-h] [--token TOKEN] [--path PATH] [--target TARGET]
 
 optional arguments:
@@ -29,3 +32,6 @@ optional arguments:
   --token TOKEN    django auth token
   --path PATH      directory containing existing/new beacons
   --target TARGET  URL prefix to send beacon data to
+
+```
+
