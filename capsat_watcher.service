@@ -1,0 +1,12 @@
+[Unit]
+Description=Capsat watcher service
+
+[Service]
+ExecStart=/path/to/venv/bin/capsat_watcher \
+    --token XXXXXXXXXXXXXXXXX \
+    --target http://localhost:8000 \
+    --path path/to/beacons/
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
