@@ -2,7 +2,7 @@
 
 Script to watch directory for new/existing Capsat beacons and upload them to a Django server.
 
-Once beacons are processed, their filename will be added to a `.processed_beacons` file to prevent reupload.
+Once beacons are processed, their filename will be changed to `processed_beacon_...`
 
 ## Quickstart
 

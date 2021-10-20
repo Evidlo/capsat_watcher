@@ -1,5 +1,6 @@
 .processed_beacons
 error.html
 beacon_*
+processed_beacon_*
 __pycache__
 *.egg-info
